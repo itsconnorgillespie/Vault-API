@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     APPLICATION_DESCRIPTION: str
     APPLICATION_VERSION: str
     APPLICATION_DEBUG: bool
-    APPLICATION_HTTPS_ONLY: bool
     SWAGGER_ENABLED: bool
     REDOC_ENABLED: bool
     MQTT_HOST: str

@@ -39,7 +39,6 @@ templates = Jinja2Templates(directory="templates")
 logger = logging.getLogger(__name__)
 
 # Set application middleware.
-app.add_middleware(HTTPSRedirectMiddleware) if settings.APPLICATION_HTTPS_ONLY else None
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

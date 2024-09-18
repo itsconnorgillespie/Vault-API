@@ -1,0 +1,49 @@
+version: "3.8"
+services:
+  traefik:
+    image: traefik:v2.9.6
+    container_name: "traefik"
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - vault-network
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik.toml:/etc/traefik/traefik.toml"
+      - "./certificates:/certificates"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.domain.com`) && (PathPrefix(`/`)"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=user:hash"  # echo $(htpasswd -nb user password) | sed -e s/\\$/\\$\\$/g
+  vault:
+    build: .
+    image: image
+    pull_policy: never
+    container_name: "vault"
+    restart: always
+    command: uvicorn main:app --host 0.0.0.0 --port 80 --log-config=logger.yaml
+    expose:
+      - "80"
+    networks:
+      - vault-network
+      - mysql-network
+      - mosquitto-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fastapi.rule=Host(`domain.com`)"
+      - "traefik.http.routers.fastapi.tls=true"
+      - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
+networks:
+  vault-network:
+    name: vault-network
+    driver: bridge
+  mysql-network:
+    external: true
+  mosquitto-network:
+    external: true

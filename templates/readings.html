@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vault</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .chart-container {
+            background-color: #282828;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            overflow-x: auto;
+        }
+        .chart-wrapper {
+            flex: 1;
+            margin: 0 10px;
+        }
+        h2 {
+            color: #ffffff;
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        canvas {
+            background-color: #3a3a3a;
+            border-radius: 10px;
+            width: 100% !important;
+            height: auto !important;
+        }
+        footer {
+            color: #cccccc;
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                flex-direction: column;
+            }
+            .chart-wrapper {
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2 id="deviceTitle">Vault: Loading </h2>
+    <div class="chart-container">
+        <div class="chart-wrapper">
+            <canvas id="temperatureChart"></canvas>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="humidityChart"></canvas>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const apiEndpoint = "https://connorgillespie.com/readings";
+        const deviceUUID = "ec38668c-3e92-4e09-95bb-086fcc2c8524";
+        const minutes = 10;
+
+        function formatTimestamp(timestamp) {
+            let date = new Date(timestamp);
+            let offset = date.getTimezoneOffset() * 60000;
+            let local = new Date(date - offset);
+            return local.toLocaleTimeString("en-US", {
+                hour12: true,
+                hour: "numeric",
+                minute: "numeric",
+                second: "numeric"
+            });
+        }
+
+        const temperatureCtx = document.getElementById("temperatureChart").getContext("2d");
+        const temperatureChart = new Chart(temperatureCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: "Temperature (°C)",
+                        data: [],
+                        backgroundColor: "rgba(0, 174, 239, 0.2)",
+                        borderColor: "#00aeef",
+                        borderWidth: 2,
+                        fill: true,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    yAxes: [{
+                        beginAtZero: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: "Temperature (°C)"
+                        }
+                    }],
+                    xAxes: [{
+                        ticks: {
+                            display: true
+                        }
+                    }]
+                },
+                tooltips: {
+                    callbacks: {
+                        title: function(tooltipItems, data) {
+                            return data.labels[tooltipItems[0].index];
+                        }
+                    }
+                }
+            }
+        });
+
+        const humidityCtx = document.getElementById("humidityChart").getContext("2d");
+        const humidityChart = new Chart(humidityCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: "Humidity (%)",
+                        data: [],
+                        backgroundColor: "rgba(214, 68, 68, 0.2)",
+                        borderColor: "#d74444",
+                        borderWidth: 2,
+                        fill: true,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    yAxes: [{
+                        beginAtZero: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: "Humidity (%)"
+                        }
+                    }],
+                    xAxes: [{
+                        ticks: {
+                            display: true
+                        }
+                    }]
+                },
+                tooltips: {
+                    callbacks: {
+                        title: function(tooltipItems, data) {
+                            return data.labels[tooltipItems[0].index];
+                        }
+                    }
+                }
+            }
+        });
+
+        async function fetchData() {
+            try {
+                const response = await fetch(`${apiEndpoint}?minutes=${minutes}`);
+                const data = await response.json();
+                const filteredData = data.filter(entry => entry.device === deviceUUID);
+                const sortedData = filteredData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                const timestamps = sortedData.map(entry => formatTimestamp(entry.timestamp));
+                const temperatures = sortedData.map(entry => entry.temperature);
+                const humidity = sortedData.map(entry => entry.humidity);
+
+                temperatureChart.data.labels = timestamps;
+                temperatureChart.data.datasets[0].data = temperatures;
+                temperatureChart.update();
+
+                humidityChart.data.labels = timestamps;
+                humidityChart.data.datasets[0].data = humidity;
+                humidityChart.update();
+
+                document.getElementById("deviceTitle").textContent = `Vault: ${deviceUUID}`;
+
+            } catch (error) {
+                console.error("Error Fetching Data: ", error);
+            }
+        }
+
+        setInterval(fetchData, 15000);
+        fetchData();
+    </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import logging
 from asyncio import create_task
 from datetime import datetime, timedelta
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from aiosmtplib import SMTP, SMTPAuthenticationError
 from sqlalchemy.orm import Session
@@ -33,10 +34,11 @@ async def send_device_notification(id: str,
             return
 
         # Prepare MIME email body.
-        message = MIMEText(f"Temperature hit {reading.temperature}C!")
+        message = MIMEMultipart()
         message["From"] = settings.SMTP_USERNAME
         message["To"] = notification.email
-        message["Subject"] = "Coco Vault Notification"
+        message["Subject"] = "Vault Warning Notification"
+        message.attach(MIMEText(f"Warning! Current temperature is {reading.temperature} C and humidity is {reading.humidity} %!", "plain"))
 
         try:
             # Send notification email with SMTP.
@@ -49,6 +51,9 @@ async def send_device_notification(id: str,
                 db.commit()
                 db.refresh(notification)
                 logger.info(f"Sent {notification.email} a notification email.")
+
+                # Close SMTP connection.
+                smtp.close()
         except SMTPAuthenticationError as error:
             logger.error(f"Invalid SMTP credentials.")
 
@@ -63,8 +68,10 @@ def save_device_reading(id: str,
     db.commit()
     db.refresh(reading)
 
-    # Create new task to send notification.
-    create_task(send_device_notification(id, reading, db))
+    # Check if temperature has surpassed.
+    if temperature >= settings.NOTIFICATION_TEMPERATURE_CELSIUS:
+        # Create new task to send notification.
+        create_task(send_device_notification(id, reading, db))
 
     # Log reading saved and return object.
     logger.info(f"Reading {reading.id} created for device {id}.")

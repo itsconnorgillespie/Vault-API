@@ -69,7 +69,7 @@ def save_device_reading(id: str,
     db.refresh(reading)
 
     # Check if temperature has surpassed.
-    if temperature >= settings.NOTIFICATION_TEMPERATURE_CELSIUS:
+    if temperature >= settings.NOTIFICATION_TEMPERATURE_CELSIUS or humidity >= settings.NOTIFICATION_HUMIDITY_PERCENT:
         # Create new task to send notification.
         create_task(send_device_notification(id, reading, db))
 

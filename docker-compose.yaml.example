@@ -1,26 +1,5 @@
 version: "3.8"
 services:
-  traefik:
-    image: traefik:v2.9.6
-    container_name: "traefik"
-    restart: always
-    ports:
-      - 80:80
-      - 443:443
-    networks:
-      - vault-network
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik.toml:/etc/traefik/traefik.toml"
-      - "./certificates:/certificates"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.domain.com`) && PathPrefix(`/`)"
-      - "traefik.http.routers.dashboard.tls=true"
-      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.middlewares=auth"
-      - "traefik.http.middlewares.auth.basicauth.users=user:hash"  # echo $(htpasswd -nb user password) | sed -e s/\\$/\\$\\$/g
   vault:
     build: .
     image: image
@@ -31,7 +10,7 @@ services:
     expose:
       - "80"
     networks:
-      - vault-network
+      - traefik-network
       - mysql-network
       - mosquitto-network
     labels:
@@ -40,9 +19,8 @@ services:
       - "traefik.http.routers.fastapi.tls=true"
       - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
 networks:
-  vault-network:
-    name: vault-network
-    driver: bridge
+  traefik-network:
+    external: true
   mysql-network:
     external: true
   mosquitto-network:

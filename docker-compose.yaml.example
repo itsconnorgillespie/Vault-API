@@ -18,6 +18,7 @@ services:
       - "traefik.http.routers.fastapi.rule=Host(`domain.com`)"
       - "traefik.http.routers.fastapi.tls=true"
       - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=traefik-network"
 networks:
   traefik-network:
     external: true

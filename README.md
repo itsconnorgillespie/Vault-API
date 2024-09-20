@@ -34,6 +34,6 @@ flowchart TD
 
 [Traefik](https://traefik.io/traefik/) is a lightweight reverse proxy and load balancer written in GO. By deploying the FastAPI application behind a Traefik proxy, all HTTP traffic can be redirected to HTTPS automatically, leading to an increase in security. Although it is not necessary to deploy the Vault application, I highly recommend doing your research and deploying with Traefik.
 
-### License
+## License
 [Vault-API](https://github.com/connorgillespie/Vault-API) © 2024 by [Connor Gillespie](https://github.com/connorgillespie) is licensed under [CC BY-NC-ND 4.0](http://creativecommons.org/licenses/by-nc-nd/4.0/?ref=chooser-v1)  
 ![Creative Commons SVG](http://i.creativecommons.org/l/by-nc-nd/3.0/88x31.png)
